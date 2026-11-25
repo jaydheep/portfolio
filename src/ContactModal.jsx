@@ -2,11 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import portrait from './portraitData.js'
 import './contact.css'
 
-// Messages are sent straight from this form, the visitor never leaves the site.
-// Default: FormSubmit (free, no key). The very first message triggers one activation email to the
-// inbox below, click the link in it once and every message after that arrives normally.
-// Optional: set VITE_WEB3FORMS_KEY in Vercel to use Web3Forms instead.
-const KEY = import.meta.env.VITE_WEB3FORMS_KEY || ''
+// The form posts to /api/contact (a Vercel function, see api/contact.js) which emails you through Gmail.
+// The visitor never leaves the site.
 const TOPICS = ['AI / LLM project', 'Backend / API', 'Automation', 'Job opportunity', 'Something else']
 
 export default function ContactModal({ onClose, email }) {
@@ -47,25 +44,20 @@ export default function ContactModal({ onClose, email }) {
   const submit = async ev => {
     ev.preventDefault()
     if (!validate()) return
-    if (f.website) return setState('done') // honeypot: bots fill this hidden field
     setState('sending')
-    const subject = `Portfolio enquiry: ${f.topic} (${f.name.trim()})`
-    const fields = { name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim() || 'not given', topic: f.topic, message: f.message.trim() }
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), 20000) // never hang on "Sending" forever
     try {
-      const res = KEY
-        ? await fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ access_key: KEY, subject, from_name: 'Portfolio contact form', ...fields }),
-          })
-        : await fetch(`https://formsubmit.co/ajax/${email}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ _subject: subject, _template: 'table', _captcha: 'false', ...fields }),
-          })
-      const data = await res.json()
-      setState(res.ok && String(data.success) !== 'false' ? 'done' : 'fail')
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim(), topic: f.topic, message: f.message.trim(), website: f.website }),
+        signal: ctl.signal,
+      })
+      const data = await res.json().catch(() => ({}))
+      setState(res.ok && data.ok ? 'done' : 'fail')
     } catch { setState('fail') }
+    finally { clearTimeout(timer) }
   }
 
   return (
@@ -126,7 +118,7 @@ export default function ContactModal({ onClose, email }) {
 
             <input className="cm-hp" tabIndex="-1" autoComplete="off" aria-hidden="true" value={f.website} onChange={set('website')} name="website" />
 
-            {state === 'fail' && <p className="cm-fail" role="alert">Couldn’t send that. Please check your connection and try again, or write to {email}.</p>}
+            {state === 'fail' && <p className="cm-fail" role="alert">Couldn’t send that right now. Please try again in a moment, or write to {email}.</p>}
 
             <button className="cm-send" type="submit" disabled={state === 'sending'}>
               {state === 'sending' ? <><span className="cm-spin" />Sending</> : <>Send message
