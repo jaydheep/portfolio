@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Orb from './Orb.jsx'
+import Portrait from './Portrait.jsx'
 import { ProjectCard, SpotCard } from './Cards.jsx'
 import { Rag, Gateway, Typed } from './Demos.jsx'
 import { Counter, Reveal, useInView, useScramble } from './hooks.jsx'
-import { projects, automation, skills, jobs, marquee, builtWith } from './data.js'
+import { projects, automation, skills, jobs, marquee } from './data.js'
 
 const K = t => <span className="k">{t}</span>
 const S = t => <span className="s">{t}</span>
@@ -65,7 +66,7 @@ export default function App() {
               <a className="btn" href={import.meta.env.BASE_URL + 'Jaydheep_Professional_Resume.pdf'} download>Download resume</a>
             </div>
           </div>
-          <Orb />
+          <div className="stage"><Orb /><Portrait src={import.meta.env.BASE_URL + 'portrait.jpg'} /></div>
         </div></div>
 
         <div className="marquee" aria-hidden="true"><div className="track">{[...marquee, ...marquee].map((m, i) => <span key={i}>{m}</span>)}</div></div>
@@ -152,13 +153,12 @@ export default function App() {
             <a className="btn primary" href={'mailto:' + EMAIL}>Email me</a>
             <button className="btn" type="button" onClick={copy}>{copied ? 'Copied ✓' : EMAIL}</button>
           </div>
-          <p className="muted" style={{ marginTop: 18 }}>Based in Chennai, India. Happy to chat in English, Tamil or Telugu.</p>
+          <p className="muted" style={{ marginTop: 18 }}>Based in Chennai, India. Happy to chat in English or Tamil.</p>
         </div></section>
       </main>
 
       <footer><div className="wrap foot">
         <span>© 2026 Jaydheep R</span>
-        <span className="built">Built with {builtWith.map(([n, c]) => <em key={n}><i style={{ background: c }} />{n}</em>)}</span>
       </div></footer>
     </>
   )

@@ -46,6 +46,3 @@ export const ragSteps = [
 ]
 
 export const marquee = ['Python', 'FastAPI', 'Flask', 'Django', 'RAG', 'LLM integration', 'MongoDB', 'MySQL', 'Pandas', 'AI guardrails', 'REST APIs', 'Automation', 'React', 'Git']
-
-// Shown in the footer: what this site itself is built with.
-export const builtWith = [['React 18', '#61dafb'], ['Vite', '#bd34fe'], ['JavaScript', '#f7df1e'], ['CSS3', '#2d8cff'], ['Vercel', '#ffffff']]
