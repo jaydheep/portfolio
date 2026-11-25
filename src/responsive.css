@@ -4,7 +4,7 @@
 .hero{overflow-x:clip}
 .skills{grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr))}
 .sc-grid{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
-img,canvas,svg{max-width:100%}
+img,svg{max-width:100%}
 
 /* mobile menu button + panel (hidden on desktop) */
 .acts{display:flex;align-items:center;gap:8px}
