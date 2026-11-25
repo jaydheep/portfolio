@@ -20,10 +20,10 @@ export default function Orb() {
     const mix = k => `${Math.round(139 + (61 - 139) * k)},${Math.round(92 + (255 - 92) * k)},${Math.round(255 + (192 - 255) * k)}`
     const label = (k, front) => {
       const a = t * 0.006 + (k * Math.PI * 2) / LABELS.length
-      const [px, py, pz] = rot([Math.cos(a) * 1.5, 0, Math.sin(a) * 1.5], 0.55, 0)
+      const [px, py, pz] = rot([Math.cos(a) * 1.25, 0, Math.sin(a) * 1.25], 0.55, 0)
       if ((pz > 0) !== front) return
       const sc = 1 / (1 - pz * 0.3), cx = S / 2, R = S * 0.3
-      x.font = `500 ${Math.round(S * 0.034 * sc)}px JetBrains Mono, monospace`
+      x.font = `500 ${Math.round(S * 0.03 * sc)}px JetBrains Mono, monospace`
       x.textAlign = 'center'
       x.fillStyle = `rgba(${pz > 0 ? '255,79,216' : '200,190,255'},${0.35 + (pz + 1) * 0.33})`
       x.fillText(LABELS[k], cx + px * R * sc, cx + py * R * sc)

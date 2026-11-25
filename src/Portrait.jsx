@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import src from './portraitData.js'
 
 // Photo that cracks and shatters like glass as you scroll down (scroll-linked, so it also re-forms on the way back up).
 const IMPACT = [50, 44]
@@ -37,7 +38,7 @@ function build() {
   return { shards, cracks }
 }
 
-export default function Portrait({ src }) {
+export default function Portrait() {
   const { shards, cracks } = useMemo(build, [])
   const box = useRef(null), base = useRef(null), wrap = useRef(null), crack = useRef(null), plate = useRef(null)
 
@@ -71,7 +72,7 @@ export default function Portrait({ src }) {
   }, [shards])
 
   return (
-    <div className="portrait" ref={box}>
+    <div className="portrait" ref={box} style={{ '--img': `url("${src}")` }}>
       <div className="intro">
         <span className="ring" aria-hidden="true" />
         <img ref={base} className="photo" src={src} alt="Jaydheep R" width="720" height="720" />
@@ -80,7 +81,7 @@ export default function Portrait({ src }) {
         </svg>
         <div className="shards" ref={wrap} aria-hidden="true">
           {shards.map((s, i) => (
-            <div key={i} className="shard" style={{ clipPath: s.poly, WebkitClipPath: s.poly, transformOrigin: s.origin, backgroundImage: `url(${src})` }}>
+            <div key={i} className="shard" style={{ clipPath: s.poly, WebkitClipPath: s.poly, transformOrigin: s.origin }}>
               <i style={{ background: `linear-gradient(${s.shine}deg,rgba(255,255,255,.55),rgba(255,255,255,0) 45%,rgba(140,120,255,.35))` }} />
             </div>
           ))}
