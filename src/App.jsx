@@ -30,6 +30,7 @@ export default function App() {
   const [active, setActive] = useState('')
   const [copied, setCopied] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const bar = useRef(null), glow = useRef(null)
   const [termRef, termSeen] = useInView(0.4)
   const tagline = useScramble('builds backends that think.')
@@ -46,17 +47,31 @@ export default function App() {
     return () => { io.disconnect(); removeEventListener('scroll', scroll); removeEventListener('pointermove', move) }
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+    const esc = e => { if (e.key === 'Escape') setMenuOpen(false) }
+    const away = e => { if (!e.target.closest('.nav')) setMenuOpen(false) }
+    addEventListener('keydown', esc); addEventListener('pointerdown', away)
+    return () => { removeEventListener('keydown', esc); removeEventListener('pointerdown', away) }
+  }, [menuOpen])
+
   const copy = () => navigator.clipboard?.writeText(EMAIL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) })
 
   return (
     <>
       <div className="progress" ref={bar} />
       <div className="cursor-glow" ref={glow} aria-hidden="true" />
-      <header className="nav"><div className="pill">
-        <a className="logo" href="#top">Jaydheep<b>.</b></a>
-        <nav aria-label="Main"><ul>{nav.map(n => <li key={n}><a href={'#' + n} className={active === n ? 'on' : ''}>{n[0].toUpperCase() + n.slice(1)}</a></li>)}</ul></nav>
-        <button className="toggle" type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Switch colour theme">{theme === 'dark' ? 'Light' : 'Dark'}</button>
-      </div></header>
+      <header className="nav">
+        <div className="pill">
+          <a className="logo" href="#top">Jaydheep<b>.</b></a>
+          <nav aria-label="Main"><ul>{nav.map(n => <li key={n}><a href={'#' + n} className={active === n ? 'on' : ''}>{n[0].toUpperCase() + n.slice(1)}</a></li>)}</ul></nav>
+          <div className="acts">
+            <button className="menu-btn" type="button" aria-expanded={menuOpen} aria-controls="mnav" onClick={() => setMenuOpen(!menuOpen)}><i aria-hidden="true" />Menu</button>
+            <button className="toggle" type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Switch colour theme">{theme === 'dark' ? 'Light' : 'Dark'}</button>
+          </div>
+        </div>
+        {menuOpen && <nav className="mnav" id="mnav" aria-label="Sections">{nav.map(n => <a key={n} href={'#' + n} className={active === n ? 'on' : ''} onClick={() => setMenuOpen(false)}>{n[0].toUpperCase() + n.slice(1)}</a>)}</nav>}
+      </header>
 
       <main id="top">
         <div className="hero"><div className="wrap herogrid">
