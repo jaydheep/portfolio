@@ -1,91 +1,95 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import src from './portraitData.js'
+import './portrait.css'
 
-// Photo that cracks and shatters like glass as you scroll down (scroll-linked, so it also re-forms on the way back up).
-const IMPACT = [50, 44]
+// Scroll-linked "dust" disintegration: the photo is cut into tiles that peel away in a diagonal wave
+// and drift off as glowing particles. Scroll back up and the photo re-forms.
+const G = 22, START = 0.015
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 const rng = seed => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
 
-function build() {
-  const r = rng(7), C = 6, R = 6, pts = []
-  for (let j = 0; j <= R; j++) for (let i = 0; i <= C; i++) {
-    const edge = i === 0 || j === 0 || i === C || j === R
-    pts.push([(i / C) * 100 + (edge ? 0 : (r() - 0.5) * 11), (j / R) * 100 + (edge ? 0 : (r() - 0.5) * 11)])
-  }
-  const at = (i, j) => pts[j * (C + 1) + i], shards = []
-  const add = tri => {
-    const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cy = (tri[0][1] + tri[1][1] + tri[2][1]) / 3
-    if (Math.hypot(cx - 50, cy - 50) > 66) return
-    const dx = cx - IMPACT[0], dy = cy - IMPACT[1], d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) + (r() - 0.5) * 0.7, sp = 160 + r() * 300
-    shards.push({
-      poly: 'polygon(' + tri.map(p => p[0].toFixed(1) + '% ' + p[1].toFixed(1) + '%').join(',') + ')',
-      origin: cx.toFixed(1) + '% ' + cy.toFixed(1) + '%',
-      delay: Math.min(d / 75, 1) * 0.4,
-      x: Math.cos(ang) * sp, y: Math.sin(ang) * sp + 380 + r() * 520,
-      rot: (r() < 0.5 ? -1 : 1) * (35 + r() * 150),
-      shine: Math.round(r() * 360),
-    })
-  }
-  for (let j = 0; j < R; j++) for (let i = 0; i < C; i++) {
-    const a = at(i, j), b = at(i + 1, j), c = at(i + 1, j + 1), d = at(i, j + 1)
-    if (r() < 0.5) { add([a, b, c]); add([a, c, d]) } else { add([a, b, d]); add([b, c, d]) }
-  }
-  const cracks = Array.from({ length: 11 }, (_, k) => {
-    const a = (k / 11) * Math.PI * 2 + (r() - 0.5) * 0.4
-    let x = IMPACT[0], y = IMPACT[1], d = 'M' + x + ' ' + y
-    for (let s = 0; s < 6; s++) { const len = 9 + r() * 10; x += Math.cos(a + (r() - 0.5) * 0.7) * len; y += Math.sin(a + (r() - 0.5) * 0.7) * len; d += 'L' + x.toFixed(1) + ' ' + y.toFixed(1) }
-    return d
-  })
-  return { shards, cracks }
-}
-
 export default function Portrait() {
-  const { shards, cracks } = useMemo(build, [])
-  const box = useRef(null), base = useRef(null), wrap = useRef(null), crack = useRef(null), plate = useRef(null)
+  const box = useRef(null), base = useRef(null), cv = useRef(null), ring = useRef(null), plate = useRef(null)
 
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion:reduce)').matches) return
-    const kids = [...wrap.current.children]
-    let raf = 0
-    const update = () => {
-      raf = 0
-      const p = Math.max(0, Math.min(1, scrollY / (innerHeight * 0.8)))
-      const broken = p > 0.06, live = broken && p < 1
-      box.current.classList.toggle('breaking', live)
-      base.current.style.visibility = broken ? 'hidden' : 'visible'
-      wrap.current.style.visibility = live ? 'visible' : 'hidden'
-      crack.current.style.opacity = broken ? 0 : Math.min(p / 0.05, 1)
-      crack.current.style.setProperty('--o', 1 - Math.min(p / 0.05, 1))
-      plate.current.style.opacity = Math.max(0, 1 - p * 5)
-      box.current.style.setProperty('--g', Math.min(Math.max((p - 0.06) * 10, 0), 1))
-      if (!live) return
-      kids.forEach((el, i) => {
-        const s = shards[i]
-        const q = Math.max(0, Math.min(1, (p - 0.06 - s.delay) / 0.5)), e = q * q
-        el.style.transform = `translate3d(${s.x * e}px,${s.y * e}px,0) rotate(${s.rot * e}deg) scale(${1 - 0.3 * e})`
-        el.style.opacity = 1 - Math.max(0, (q - 0.55) / 0.45)
-      })
+    const c = cv.current, x = c.getContext('2d'), dpr = Math.min(devicePixelRatio || 1, 2)
+    const img = new Image()
+    let S = 0, mask = null, tiles = [], raf = 0, loaded = false
+
+    const setup = () => {
+      S = box.current.clientWidth
+      if (!S || !loaded) return
+      c.width = c.height = Math.round(S * 3 * dpr)
+      mask = document.createElement('canvas')
+      mask.width = mask.height = Math.round(S * dpr)
+      const m = mask.getContext('2d')
+      m.beginPath(); m.arc(mask.width / 2, mask.height / 2, mask.width / 2, 0, Math.PI * 2); m.clip()
+      m.drawImage(img, 0, 0, mask.width, mask.height)
+      const r = rng(11), t = S / G
+      tiles = []
+      for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+        const cx = (i + 0.5) * t, cy = (j + 0.5) * t
+        if (Math.hypot(cx - S / 2, cy - S / 2) > S / 2 + t * 0.7) continue
+        tiles.push({
+          i, j, cx, cy,
+          delay: ((i + (G - j)) / (2 * G)) * 0.5 + r() * 0.1,
+          ang: -Math.PI / 4 + (r() - 0.5) * 1.6,
+          dist: (70 + r() * 230) * (S / 246),
+          spin: (r() - 0.5) * 5,
+          warm: r() < 0.45,
+        })
+      }
     }
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
-    update()
-    addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll)
-    return () => { cancelAnimationFrame(raf); removeEventListener('scroll', onScroll); removeEventListener('resize', onScroll) }
-  }, [shards])
+
+    const draw = () => {
+      raf = 0
+      const p = clamp(scrollY / (innerHeight * 0.8))
+      const dust = p > START && p < 1 && !!mask
+      base.current.style.visibility = p > START && mask ? 'hidden' : 'visible'
+      c.style.visibility = dust ? 'visible' : 'hidden'
+      ring.current.style.opacity = 1 - clamp(p * 6)
+      plate.current.style.opacity = 1 - clamp(p * 5)
+      if (!dust) return
+      x.setTransform(1, 0, 0, 1, 0, 0)
+      x.clearRect(0, 0, c.width, c.height)
+      x.setTransform(dpr, 0, 0, dpr, 0, 0)
+      const t = S / G, k = S / 246
+      for (const o of tiles) {
+        const q = clamp((p - START - o.delay) / 0.42), e = q * q
+        const px = S + o.cx + Math.cos(o.ang) * o.dist * e
+        const py = S + o.cy + Math.sin(o.ang) * o.dist * e - 40 * k * e
+        const sc = 1 - 0.85 * e, size = t * sc + 0.6
+        x.save()
+        x.translate(px, py)
+        x.rotate(o.spin * e)
+        x.globalAlpha = 1 - Math.pow(q, 1.4)
+        x.drawImage(mask, o.i * t * dpr, o.j * t * dpr, t * dpr, t * dpr, -size / 2, -size / 2, size, size)
+        if (q > 0) {
+          x.globalCompositeOperation = 'lighter'
+          x.globalAlpha = Math.sin(q * Math.PI) * 0.9
+          x.fillStyle = o.warm ? '#ff4fd8' : '#3dffc0'
+          x.fillRect(-size / 2, -size / 2, size, size)
+        }
+        x.restore()
+      }
+    }
+
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(draw) }
+    const onResize = () => { setup(); schedule() }
+    img.onload = () => { loaded = true; setup(); schedule() }
+    img.src = src
+    addEventListener('scroll', schedule, { passive: true })
+    addEventListener('resize', onResize)
+    return () => { cancelAnimationFrame(raf); removeEventListener('scroll', schedule); removeEventListener('resize', onResize) }
+  }, [])
 
   return (
-    <div className="portrait" ref={box} style={{ '--img': `url("${src}")` }}>
+    <div className="portrait" ref={box}>
       <div className="intro">
-        <span className="ring" aria-hidden="true" />
+        <span className="ring" ref={ring} aria-hidden="true" />
         <img ref={base} className="photo" src={src} alt="Jaydheep R" width="720" height="720" />
-        <svg ref={crack} className="cracks" viewBox="0 0 100 100" aria-hidden="true">
-          {cracks.map((d, i) => <path key={i} d={d} pathLength="1" style={{ strokeDasharray: 1, strokeDashoffset: 'var(--o,1)' }} />)}
-        </svg>
-        <div className="shards" ref={wrap} aria-hidden="true">
-          {shards.map((s, i) => (
-            <div key={i} className="shard" style={{ clipPath: s.poly, WebkitClipPath: s.poly, transformOrigin: s.origin }}>
-              <i style={{ background: `linear-gradient(${s.shine}deg,rgba(255,255,255,.55),rgba(255,255,255,0) 45%,rgba(140,120,255,.35))` }} />
-            </div>
-          ))}
-        </div>
+        <canvas ref={cv} className="dust" aria-hidden="true" />
       </div>
       <span className="plate" ref={plate}><b>Jaydheep R</b>AI Developer</span>
     </div>

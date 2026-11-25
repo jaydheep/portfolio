@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Orb from './Orb.jsx'
 import Portrait from './Portrait.jsx'
+import Showcase from './Showcase.jsx'
 import ContactModal from './ContactModal.jsx'
 import { ProjectCard, SpotCard } from './Cards.jsx'
 import { Rag, Gateway, Typed } from './Demos.jsx'
@@ -21,7 +22,7 @@ const json = [
   '}',
 ]
 
-const nav = ['about', 'projects', 'experience', 'automation', 'skills', 'contact']
+const nav = ['about', 'projects', 'showcase', 'experience', 'automation', 'skills', 'contact']
 const EMAIL = 'jaydheeprsk@gmail.com'
 
 export default function App() {
@@ -122,6 +123,8 @@ export default function App() {
             <Gateway />
           </SpotCard></Reveal>
         </div></section>
+
+        <Showcase />
 
         <section id="experience"><div className="wrap">
           <h2>Experience</h2>
