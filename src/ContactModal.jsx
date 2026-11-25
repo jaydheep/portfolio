@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import portrait from './portraitData.js'
 import './contact.css'
 
-// Free Web3Forms key (web3forms.com): set VITE_WEB3FORMS_KEY in Vercel -> Settings -> Environment Variables.
-// Without a key the form falls back to opening the visitor's mail app with everything filled in.
+// Messages are sent straight from this form, the visitor never leaves the site.
+// Default: FormSubmit (free, no key). The very first message triggers one activation email to the
+// inbox below, click the link in it once and every message after that arrives normally.
+// Optional: set VITE_WEB3FORMS_KEY in Vercel to use Web3Forms instead.
 const KEY = import.meta.env.VITE_WEB3FORMS_KEY || ''
 const TOPICS = ['AI / LLM project', 'Backend / API', 'Automation', 'Job opportunity', 'Something else']
 
 export default function ContactModal({ onClose, email }) {
   const [f, setF] = useState({ name: '', email: '', phone: '', topic: TOPICS[0], message: '', website: '' })
   const [err, setErr] = useState({})
-  const [state, setState] = useState('idle') // idle | sending | done | fallback | fail
+  const [state, setState] = useState('idle') // idle | sending | done | fail
   const dlg = useRef(null), first = useRef(null), closeRef = useRef(onClose)
   closeRef.current = onClose
 
@@ -46,39 +48,39 @@ export default function ContactModal({ onClose, email }) {
     ev.preventDefault()
     if (!validate()) return
     if (f.website) return setState('done') // honeypot: bots fill this hidden field
-    const subject = `Portfolio enquiry: ${f.topic} (${f.name.trim()})`
-    const lines = [`Name: ${f.name.trim()}`, `Email: ${f.email.trim()}`, f.phone.trim() && `Phone: ${f.phone.trim()}`, `Topic: ${f.topic}`, '', f.message.trim()].filter(x => x !== '' && x !== false || x === '')
-    if (!KEY) {
-      location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
-      return setState('fallback')
-    }
     setState('sending')
+    const subject = `Portfolio enquiry: ${f.topic} (${f.name.trim()})`
+    const fields = { name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim() || 'not given', topic: f.topic, message: f.message.trim() }
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ access_key: KEY, subject, from_name: 'Portfolio contact form', name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim(), topic: f.topic, message: f.message.trim() }),
-      })
+      const res = KEY
+        ? await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ access_key: KEY, subject, from_name: 'Portfolio contact form', ...fields }),
+          })
+        : await fetch(`https://formsubmit.co/ajax/${email}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ _subject: subject, _template: 'table', _captcha: 'false', ...fields }),
+          })
       const data = await res.json()
-      setState(data.success ? 'done' : 'fail')
+      setState(res.ok && String(data.success) !== 'false' ? 'done' : 'fail')
     } catch { setState('fail') }
   }
-
-  const finished = state === 'done' || state === 'fallback'
 
   return (
     <div className="cm-back" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="cm" role="dialog" aria-modal="true" aria-labelledby="cm-title" ref={dlg}>
         <button className="cm-x" type="button" onClick={onClose} aria-label="Close">×</button>
 
-        {finished ? (
+        {state === 'done' ? (
           <div className="cm-done" role="status">
             <svg viewBox="0 0 80 80" width="96" height="96" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle className="cm-c" cx="40" cy="40" r="34" pathLength="1" stroke="var(--m)" />
               <path className="cm-t" d="M26 41l10 10 19-22" pathLength="1" stroke="var(--m)" />
             </svg>
-            <h3 id="cm-title">{state === 'done' ? 'Message sent' : 'Your mail app is opening'}</h3>
-            <p>{state === 'done' ? `Thanks ${f.name.trim().split(' ')[0]}! I’ll reply to ${f.email.trim()} soon.` : `Everything is filled in. Just press send in your mail app. You can also write to ${email} directly.`}</p>
+            <h3 id="cm-title">Message sent</h3>
+            <p>Thanks {f.name.trim().split(' ')[0]}! I’ll reply to {f.email.trim()} soon.</p>
             <button className="btn primary" type="button" onClick={onClose}>Done</button>
           </div>
         ) : (
@@ -124,7 +126,7 @@ export default function ContactModal({ onClose, email }) {
 
             <input className="cm-hp" tabIndex="-1" autoComplete="off" aria-hidden="true" value={f.website} onChange={set('website')} name="website" />
 
-            {state === 'fail' && <p className="cm-fail" role="alert">Couldn’t send that. Please try again, or email me at {email}.</p>}
+            {state === 'fail' && <p className="cm-fail" role="alert">Couldn’t send that. Please check your connection and try again, or write to {email}.</p>}
 
             <button className="cm-send" type="submit" disabled={state === 'sending'}>
               {state === 'sending' ? <><span className="cm-spin" />Sending</> : <>Send message
