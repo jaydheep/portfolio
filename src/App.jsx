@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Orb from './Orb.jsx'
 import Portrait from './Portrait.jsx'
+import ContactModal from './ContactModal.jsx'
 import { ProjectCard, SpotCard } from './Cards.jsx'
 import { Rag, Gateway, Typed } from './Demos.jsx'
 import { Counter, Reveal, useInView, useScramble } from './hooks.jsx'
@@ -27,6 +28,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
   const [active, setActive] = useState('')
   const [copied, setCopied] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
   const bar = useRef(null), glow = useRef(null)
   const [termRef, termSeen] = useInView(0.4)
   const tagline = useScramble('builds backends that think.')
@@ -66,7 +68,7 @@ export default function App() {
               <a className="btn" href={import.meta.env.BASE_URL + 'Jaydheep_Professional_Resume.pdf'} download>Download resume</a>
             </div>
           </div>
-          <div className="stage"><Orb /><Portrait src={import.meta.env.BASE_URL + 'portrait.jpg'} /></div>
+          <div className="stage"><Orb /><Portrait /></div>
         </div></div>
 
         <div className="marquee" aria-hidden="true"><div className="track">{[...marquee, ...marquee].map((m, i) => <span key={i}>{m}</span>)}</div></div>
@@ -150,7 +152,7 @@ export default function App() {
         <section id="contact"><div className="wrap">
           <h2 className="big">Have a backend or <span className="grad2">AI project</span> in mind?</h2>
           <div className="cta">
-            <a className="btn primary" href={'mailto:' + EMAIL}>Email me</a>
+            <button className="btn primary" type="button" onClick={() => setContactOpen(true)}>Email me</button>
             <button className="btn" type="button" onClick={copy}>{copied ? 'Copied ✓' : EMAIL}</button>
           </div>
           <p className="muted" style={{ marginTop: 18 }}>Based in Chennai, India. Happy to chat in English or Tamil.</p>
@@ -160,6 +162,8 @@ export default function App() {
       <footer><div className="wrap foot">
         <span>© 2026 Jaydheep R</span>
       </div></footer>
+
+      {contactOpen && <ContactModal email={EMAIL} onClose={() => setContactOpen(false)} />}
     </>
   )
 }
