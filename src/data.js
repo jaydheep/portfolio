@@ -1,13 +1,13 @@
 // ✏️ EDIT HERE: change text, add projects, fix links. The site updates automatically.
 export const projects = [
   { name: 'ReviewGenX', url: 'https://app.reviewgenx.ai/', tag: 'AI product',
-    blurb: 'AI-powered review platform I helped build and ship.', stack: ['Python', 'LLM', 'FastAPI'], hue: 265 },
+    blurb: 'AI-powered review platform I helped build and ship.', stack: ['Python', 'LLM', 'FastAPI'], hue: 320, kind: 'review' },
   { name: 'VisualGenX', url: 'https://appvisualgenx.deepknit.ai/', tag: 'AI product',
-    blurb: 'AI visual generation application running live on DeepKnit.', stack: ['Python', 'AI models', 'Flask'], hue: 190 },
+    blurb: 'AI visual generation application running live on DeepKnit.', stack: ['Python', 'AI models', 'Flask'], hue: 268, kind: 'visual' },
   { name: 'AI Gateway', url: 'http://ai.deepknit.ai/', tag: 'AI security',
-    blurb: 'Sits between apps and the LLM. Blocks prompt injection and keeps sensitive data from reaching the model.', stack: ['Python', 'LLM security', 'Guardrails'], hue: 155 },
+    blurb: 'Sits between apps and the LLM. Blocks prompt injection and keeps sensitive data from reaching the model.', stack: ['Python', 'LLM security', 'Guardrails'], hue: 160, kind: 'gateway' },
   { name: 'DK Platform', url: 'https://dkpstaging.deepknit.ai/login', tag: 'Platform',
-    blurb: 'DeepKnit platform with backend services, data pipelines and automation behind it.', stack: ['Django', 'MongoDB', 'Pandas'], hue: 215 },
+    blurb: 'DeepKnit platform with backend services, data pipelines and automation behind it.', stack: ['Django', 'MongoDB', 'Pandas'], hue: 212, kind: 'dk' },
 ]
 
 export const automation = [
@@ -44,3 +44,8 @@ export const ragSteps = [
   ['LLM answer', 'The LLM combines the question and the retrieved context to produce an answer for intelligent data retrieval.'],
   ['Report', 'Results flow into configurable reports and visualisations, including XML-to-PDF documents.'],
 ]
+
+export const marquee = ['Python', 'FastAPI', 'Flask', 'Django', 'RAG', 'LLM integration', 'MongoDB', 'MySQL', 'Pandas', 'AI guardrails', 'REST APIs', 'Automation', 'React', 'Git']
+
+// Shown in the footer: what this site itself is built with.
+export const builtWith = [['React 18', '#61dafb'], ['Vite', '#bd34fe'], ['JavaScript', '#f7df1e'], ['CSS3', '#2d8cff'], ['Vercel', '#ffffff']]

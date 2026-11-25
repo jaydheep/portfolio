@@ -5,4 +5,4 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # outputs dist/
 ```
-Edit content in `src/data.js` (projects, links, skills, jobs). Put `Jaydheep_Professional_Resume.pdf` in `public/`.
+Edit text, projects and links in `src/data.js`. Resume PDF lives in `public/`.

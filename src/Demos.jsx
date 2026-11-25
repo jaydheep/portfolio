@@ -74,13 +74,14 @@ export function Gateway() {
   )
 }
 
-export function Typed({ lines }) {
+export function Typed({ lines, start }) {
   const [n, setN] = useState(0)
   useEffect(() => {
+    if (!start) return
     if (matchMedia('(prefers-reduced-motion:reduce)').matches) return setN(lines.length)
     if (n >= lines.length) return
     const id = setTimeout(() => setN(n + 1), 260)
     return () => clearTimeout(id)
-  }, [n, lines.length])
+  }, [n, start, lines.length])
   return <pre>{lines.slice(0, n).map((l, i) => <div key={i}>{l}</div>)}<span className="cursor" /></pre>
 }
