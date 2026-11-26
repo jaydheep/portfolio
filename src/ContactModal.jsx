@@ -10,6 +10,7 @@ export default function ContactModal({ onClose, email }) {
   const [f, setF] = useState({ name: '', email: '', phone: '', topic: TOPICS[0], message: '', website: '' })
   const [err, setErr] = useState({})
   const [state, setState] = useState('idle') // idle | sending | done | fail
+  const [failCode, setFailCode] = useState('')
   const dlg = useRef(null), first = useRef(null), closeRef = useRef(onClose)
   closeRef.current = onClose
 
@@ -47,6 +48,7 @@ export default function ContactModal({ onClose, email }) {
     setState('sending')
     const ctl = new AbortController()
     const timer = setTimeout(() => ctl.abort(), 20000) // never hang on "Sending" forever
+    let code = ''
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -55,9 +57,12 @@ export default function ContactModal({ onClose, email }) {
         signal: ctl.signal,
       })
       const data = await res.json().catch(() => ({}))
-      setState(res.ok && data.ok ? 'done' : 'fail')
-    } catch { setState('fail') }
-    finally { clearTimeout(timer) }
+      if (res.ok && data.ok) { clearTimeout(timer); return setState('done') }
+      code = data.error ? data.error + (data.code ? ' ' + data.code : '') : 'http_' + res.status
+    } catch (e) { code = e && e.name === 'AbortError' ? 'timeout' : 'network' }
+    clearTimeout(timer)
+    setFailCode(code)
+    setState('fail')
   }
 
   return (
@@ -118,7 +123,12 @@ export default function ContactModal({ onClose, email }) {
 
             <input className="cm-hp" tabIndex="-1" autoComplete="off" aria-hidden="true" value={f.website} onChange={set('website')} name="website" />
 
-            {state === 'fail' && <p className="cm-fail" role="alert">Couldn’t send that right now. Please try again in a moment, or write to {email}.</p>}
+            {state === 'fail' && (
+              <p className="cm-fail" role="alert">
+                Couldn’t send that right now. Please try again in a moment, or write to {email}.
+                <small style={{ display: 'block', marginTop: 6, opacity: 0.7, fontFamily: 'var(--mono)', fontSize: '.75rem' }}>Error code: {failCode}</small>
+              </p>
+            )}
 
             <button className="cm-send" type="submit" disabled={state === 'sending'}>
               {state === 'sending' ? <><span className="cm-spin" />Sending</> : <>Send message

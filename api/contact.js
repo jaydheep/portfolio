@@ -42,6 +42,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true })
   } catch (err) {
     console.error('contact mail failed:', err && err.message)
-    return res.status(502).json({ ok: false, error: 'send_failed' })
+    // the short error code (for example EAUTH = wrong app password) helps with debugging and leaks nothing secret
+    return res.status(502).json({ ok: false, error: 'send_failed', code: err && err.code ? String(err.code) : undefined })
   }
 }
